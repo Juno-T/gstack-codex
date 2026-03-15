@@ -19,11 +19,18 @@ allowed-tools:
 ## Update Check (run first)
 
 ```bash
-_UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
+_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
+_GSTACK=""
+[ -z "$_GSTACK" ] && [ -n "$_ROOT" ] && [ -d "$_ROOT/.claude/skills/gstack" ] && _GSTACK="$_ROOT/.claude/skills/gstack"
+[ -z "$_GSTACK" ] && [ -n "$_ROOT" ] && [ -d "$_ROOT/.agents/skills/gstack" ] && _GSTACK="$_ROOT/.agents/skills/gstack"
+[ -z "$_GSTACK" ] && [ -d "$HOME/.claude/skills/gstack" ] && _GSTACK="$HOME/.claude/skills/gstack"
+[ -z "$_GSTACK" ] && [ -d "$HOME/.agents/skills/gstack" ] && _GSTACK="$HOME/.agents/skills/gstack"
+_UPD=""
+[ -n "$_GSTACK" ] && _UPD=$("$_GSTACK/bin/gstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD" || true
 ```
 
-If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
+If output shows `UPGRADE_AVAILABLE <old> <new>`: read `gstack-upgrade/SKILL.md` from the active gstack install (for example `~/.claude/skills/gstack/gstack-upgrade/SKILL.md`, `~/.agents/skills/gstack/gstack-upgrade/SKILL.md`, `.claude/skills/gstack/gstack-upgrade/SKILL.md`, or `.agents/skills/gstack/gstack-upgrade/SKILL.md`) and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
 
 # gstack browse: QA Testing & Dogfooding
 
@@ -33,10 +40,12 @@ Auto-shuts down after 30 min idle. State persists between calls (cookies, tabs, 
 ## SETUP (run this check BEFORE any browse command)
 
 ```bash
-_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
 B=""
-[ -n "$_ROOT" ] && [ -x "$_ROOT/.claude/skills/gstack/browse/dist/browse" ] && B="$_ROOT/.claude/skills/gstack/browse/dist/browse"
-[ -z "$B" ] && B=~/.claude/skills/gstack/browse/dist/browse
+[ -z "$B" ] && [ -n "$_ROOT" ] && [ -x "$_ROOT/.claude/skills/gstack/browse/dist/browse" ] && B="$_ROOT/.claude/skills/gstack/browse/dist/browse"
+[ -z "$B" ] && [ -n "$_ROOT" ] && [ -x "$_ROOT/.agents/skills/gstack/browse/dist/browse" ] && B="$_ROOT/.agents/skills/gstack/browse/dist/browse"
+[ -z "$B" ] && [ -x "$HOME/.claude/skills/gstack/browse/dist/browse" ] && B="$HOME/.claude/skills/gstack/browse/dist/browse"
+[ -z "$B" ] && [ -x "$HOME/.agents/skills/gstack/browse/dist/browse" ] && B="$HOME/.agents/skills/gstack/browse/dist/browse"
 if [ -x "$B" ]; then
   echo "READY: $B"
 else

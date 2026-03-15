@@ -3,10 +3,15 @@
 set -e
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SKILLS_DIR="$REPO_ROOT/.claude/skills"
+source "$REPO_ROOT/lib/install-preset.sh"
+
+PRESET="$(gstack_resolve_preset "${1:-}")"
+PRESET_DOT_DIR="$(gstack_preset_dot_dir "$PRESET")"
+PRESET_SKILLS_DIR="$(gstack_preset_skills_dir "$PRESET")"
+SKILLS_DIR="$REPO_ROOT/$PRESET_DOT_DIR/$PRESET_SKILLS_DIR"
 
 if [ ! -d "$SKILLS_DIR" ]; then
-  echo "Nothing to tear down — .claude/skills/ doesn't exist."
+  echo "Nothing to tear down — $PRESET_DOT_DIR/$PRESET_SKILLS_DIR/ doesn't exist."
   exit 0
 fi
 
@@ -29,11 +34,11 @@ fi
 
 # Clean up empty dirs
 rmdir "$SKILLS_DIR" 2>/dev/null || true
-rmdir "$REPO_ROOT/.claude" 2>/dev/null || true
+rmdir "$REPO_ROOT/$PRESET_DOT_DIR" 2>/dev/null || true
 
 if [ ${#removed[@]} -gt 0 ]; then
   echo "Removed: ${removed[*]}"
 else
   echo "No symlinks found."
 fi
-echo "Dev mode deactivated. Global gstack (~/.claude/skills/gstack) is now active."
+echo "Dev mode deactivated for preset '$PRESET'."

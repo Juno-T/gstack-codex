@@ -48,6 +48,21 @@ describe('gen-skill-docs', () => {
     expect(content).toContain('AUTO-GENERATED from SKILL.md.tmpl');
   });
 
+  test('generated setup and update blocks mention both supported install presets', () => {
+    const content = fs.readFileSync(path.join(ROOT, 'browse', 'SKILL.md'), 'utf-8');
+    expect(content).toContain('.claude/skills/gstack/browse/dist/browse');
+    expect(content).toContain('.agents/skills/gstack/browse/dist/browse');
+    expect(content).toContain('~/.claude/skills/gstack/gstack-upgrade/SKILL.md');
+    expect(content).toContain('~/.agents/skills/gstack/gstack-upgrade/SKILL.md');
+  });
+
+  test('generated plan/review docs mention both assistant doc filenames', () => {
+    const ceoContent = fs.readFileSync(path.join(ROOT, 'plan-ceo-review', 'SKILL.md'), 'utf-8');
+    const engContent = fs.readFileSync(path.join(ROOT, 'plan-eng-review', 'SKILL.md'), 'utf-8');
+    expect(ceoContent).toContain('`CLAUDE.md` or `AGENTS.md`');
+    expect(engContent).toContain('`CLAUDE.md` or `AGENTS.md`');
+  });
+
   test('snapshot flags section contains all flags', () => {
     const content = fs.readFileSync(path.join(ROOT, 'SKILL.md'), 'utf-8');
     for (const flag of SNAPSHOT_FLAGS) {

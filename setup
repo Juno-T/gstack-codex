@@ -1,10 +1,23 @@
 #!/usr/bin/env bash
-# gstack setup — build browser binary + register all skills with Claude Code
+# gstack setup — build browser binary + register all skills for the selected preset
 set -e
 
+source "$(cd "$(dirname "$0")" && pwd)/lib/install-preset.sh"
+
+PRESET="$(gstack_resolve_preset "${1:-}")"
 GSTACK_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILLS_DIR="$(dirname "$GSTACK_DIR")"
+SKILLS_PARENT_DIR="$(dirname "$SKILLS_DIR")"
+PRESET_DOT_DIR="$(gstack_preset_dot_dir "$PRESET")"
+PRESET_SKILLS_DIR="$(gstack_preset_skills_dir "$PRESET")"
 BROWSE_BIN="$GSTACK_DIR/browse/dist/browse"
+FIRST_RUN=0
+
+if [ ! -d "$HOME/.gstack" ]; then
+  FIRST_RUN=1
+fi
+
+printf '%s\n' "$PRESET" > "$GSTACK_DIR/.gstack-install-preset"
 
 ensure_playwright_browser() {
   (
@@ -30,7 +43,7 @@ if [ "$NEEDS_BUILD" -eq 1 ]; then
   (
     cd "$GSTACK_DIR"
     bun install
-    bun run build
+    GSTACK_INSTALL_PRESET="$PRESET" bun run build
   )
   # Safety net: write .version if build script didn't (e.g., git not available during build)
   if [ ! -f "$GSTACK_DIR/browse/dist/.version" ]; then
@@ -60,9 +73,10 @@ fi
 # 3. Ensure ~/.gstack global state directory exists
 mkdir -p "$HOME/.gstack/projects"
 
-# 4. Only create skill symlinks if we're inside a .claude/skills directory
+# 4. Only create skill symlinks if we're inside the preset's install directory
 SKILLS_BASENAME="$(basename "$SKILLS_DIR")"
-if [ "$SKILLS_BASENAME" = "skills" ]; then
+SKILLS_PARENT_BASENAME="$(basename "$SKILLS_PARENT_DIR")"
+if [ "$SKILLS_BASENAME" = "$PRESET_SKILLS_DIR" ] && [ "$SKILLS_PARENT_BASENAME" = "$PRESET_DOT_DIR" ]; then
   linked=()
   for skill_dir in "$GSTACK_DIR"/*/; do
     if [ -f "$skill_dir/SKILL.md" ]; then
@@ -86,12 +100,12 @@ if [ "$SKILLS_BASENAME" = "skills" ]; then
 else
   echo "gstack ready."
   echo "  browse: $BROWSE_BIN"
-  echo "  (skipped skill symlinks — not inside .claude/skills/)"
+  echo "  preset: $PRESET"
+  echo "  (skipped skill symlinks — not inside $PRESET_DOT_DIR/$PRESET_SKILLS_DIR/)"
 fi
 
 # 4. First-time welcome + legacy cleanup
-if [ ! -d "$HOME/.gstack" ]; then
-  mkdir -p "$HOME/.gstack"
+if [ "$FIRST_RUN" -eq 1 ]; then
   echo "  Welcome! Run /gstack-upgrade anytime to stay current."
 fi
 rm -f /tmp/gstack-latest-version

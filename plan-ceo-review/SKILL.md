@@ -19,11 +19,18 @@ allowed-tools:
 ## Update Check (run first)
 
 ```bash
-_UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
+_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
+_GSTACK=""
+[ -z "$_GSTACK" ] && [ -n "$_ROOT" ] && [ -d "$_ROOT/.claude/skills/gstack" ] && _GSTACK="$_ROOT/.claude/skills/gstack"
+[ -z "$_GSTACK" ] && [ -n "$_ROOT" ] && [ -d "$_ROOT/.agents/skills/gstack" ] && _GSTACK="$_ROOT/.agents/skills/gstack"
+[ -z "$_GSTACK" ] && [ -d "$HOME/.claude/skills/gstack" ] && _GSTACK="$HOME/.claude/skills/gstack"
+[ -z "$_GSTACK" ] && [ -d "$HOME/.agents/skills/gstack" ] && _GSTACK="$HOME/.agents/skills/gstack"
+_UPD=""
+[ -n "$_GSTACK" ] && _UPD=$("$_GSTACK/bin/gstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD" || true
 ```
 
-If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
+If output shows `UPGRADE_AVAILABLE <old> <new>`: read `gstack-upgrade/SKILL.md` from the active gstack install (for example `~/.claude/skills/gstack/gstack-upgrade/SKILL.md`, `~/.agents/skills/gstack/gstack-upgrade/SKILL.md`, `.claude/skills/gstack/gstack-upgrade/SKILL.md`, or `.agents/skills/gstack/gstack-upgrade/SKILL.md`) and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
 
 # Mega Plan Review Mode
 
@@ -74,7 +81,7 @@ git stash list                                 # Any stashed work
 grep -r "TODO\|FIXME\|HACK\|XXX" --include="*.rb" --include="*.js" -l
 find . -name "*.rb" -newer Gemfile.lock | head -20  # Recently touched files
 ```
-Then read CLAUDE.md, TODOS.md, and any existing architecture docs. When reading TODOS.md, specifically:
+Then read the active assistant instructions file (`CLAUDE.md` or `AGENTS.md`), `TODOS.md`, and any existing architecture docs. When reading `TODOS.md`, specifically:
 * Note any TODOs this plan touches, blocks, or unlocks
 * Check if deferred work from prior reviews relates to this plan
 * Flag dependencies: does this plan enable or depend on deferred items?
@@ -305,7 +312,7 @@ Test pyramid check: Many unit, fewer integration, few E2E? Or inverted?
 Flakiness risk: Flag any test depending on time, randomness, external services, or ordering.
 Load/stress test requirements: For any new codepath called frequently or processing significant data.
 
-For LLM/prompt changes: Check CLAUDE.md for the "Prompt/LLM changes" file patterns. If this plan touches ANY of those patterns, state which eval suites must be run, which cases should be added, and what baselines to compare against.
+For LLM/prompt changes: Check the active assistant instructions file (`CLAUDE.md` or `AGENTS.md`) for the "Prompt/LLM changes" file patterns. If this plan touches ANY of those patterns, state which eval suites must be run, which cases should be added, and what baselines to compare against.
 **STOP.** AskUserQuestion once per issue. Do NOT batch. Recommend + WHY. If no issues or fix is obvious, state what you'll do and move on — don't waste a question. Do NOT proceed until user responds.
 
 ### Section 7: Performance Review
@@ -399,7 +406,7 @@ Complete table of every method that can fail, every exception class, rescued sta
 Any row with RESCUED=N, TEST=N, USER SEES=Silent → **CRITICAL GAP**.
 
 ### TODOS.md updates
-Present each potential TODO as its own individual AskUserQuestion. Never batch TODOs — one per question. Never silently skip this step. Follow the format in `.claude/skills/review/TODOS-format.md`.
+Present each potential TODO as its own individual AskUserQuestion. Never batch TODOs — one per question. Never silently skip this step. Follow the format in the installed TODO format reference (`~/.claude/skills/review/TODOS-format.md`, `~/.agents/skills/review/TODOS-format.md`, `.claude/skills/review/TODOS-format.md`, or `.agents/skills/review/TODOS-format.md`).
 
 For each TODO, describe:
 * **What:** One-line description of the work.

@@ -18,11 +18,18 @@ allowed-tools:
 ## Update Check (run first)
 
 ```bash
-_UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
+_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
+_GSTACK=""
+[ -z "$_GSTACK" ] && [ -n "$_ROOT" ] && [ -d "$_ROOT/.claude/skills/gstack" ] && _GSTACK="$_ROOT/.claude/skills/gstack"
+[ -z "$_GSTACK" ] && [ -n "$_ROOT" ] && [ -d "$_ROOT/.agents/skills/gstack" ] && _GSTACK="$_ROOT/.agents/skills/gstack"
+[ -z "$_GSTACK" ] && [ -d "$HOME/.claude/skills/gstack" ] && _GSTACK="$HOME/.claude/skills/gstack"
+[ -z "$_GSTACK" ] && [ -d "$HOME/.agents/skills/gstack" ] && _GSTACK="$HOME/.agents/skills/gstack"
+_UPD=""
+[ -n "$_GSTACK" ] && _UPD=$("$_GSTACK/bin/gstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD" || true
 ```
 
-If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
+If output shows `UPGRADE_AVAILABLE <old> <new>`: read `gstack-upgrade/SKILL.md` from the active gstack install (for example `~/.claude/skills/gstack/gstack-upgrade/SKILL.md`, `~/.agents/skills/gstack/gstack-upgrade/SKILL.md`, `.claude/skills/gstack/gstack-upgrade/SKILL.md`, or `.agents/skills/gstack/gstack-upgrade/SKILL.md`) and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
 
 # Plan Review Mode
 
@@ -88,7 +95,7 @@ Evaluate:
 ### 3. Test review
 Make a diagram of all new UX, new data flow, new codepaths, and new branching if statements or outcomes. For each, note what is new about the features discussed in this branch and plan. Then, for each new item in the diagram, make sure there is a JS or Rails test.
 
-For LLM/prompt changes: check the "Prompt/LLM changes" file patterns listed in CLAUDE.md. If this plan touches ANY of those patterns, state which eval suites must be run, which cases should be added, and what baselines to compare against. Then use AskUserQuestion to confirm the eval scope with the user.
+For LLM/prompt changes: check the "Prompt/LLM changes" file patterns listed in the active assistant instructions file (`CLAUDE.md` or `AGENTS.md`). If this plan touches ANY of those patterns, state which eval suites must be run, which cases should be added, and what baselines to compare against. Then use AskUserQuestion to confirm the eval scope with the user.
 
 **STOP.** For each issue found in this section, call AskUserQuestion individually. One issue per call. Present options, state your recommendation, explain WHY. Do NOT batch multiple issues into one AskUserQuestion. Only proceed to the next section after ALL issues in this section are resolved.
 
@@ -124,7 +131,7 @@ Every plan review MUST produce a "NOT in scope" section listing work that was co
 List existing code/flows that already partially solve sub-problems in this plan, and whether the plan reuses them or unnecessarily rebuilds them.
 
 ### TODOS.md updates
-After all review sections are complete, present each potential TODO as its own individual AskUserQuestion. Never batch TODOs — one per question. Never silently skip this step. Follow the format in `.claude/skills/review/TODOS-format.md`.
+After all review sections are complete, present each potential TODO as its own individual AskUserQuestion. Never batch TODOs — one per question. Never silently skip this step. Follow the format in the installed TODO format reference (`~/.claude/skills/review/TODOS-format.md`, `~/.agents/skills/review/TODOS-format.md`, `.claude/skills/review/TODOS-format.md`, or `.agents/skills/review/TODOS-format.md`).
 
 For each TODO, describe:
 * **What:** One-line description of the work.

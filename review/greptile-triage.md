@@ -34,7 +34,8 @@ The `position != null` filter on line-level comments automatically skips outdate
 
 Derive the project-specific history path:
 ```bash
-REMOTE_SLUG=$(browse/bin/remote-slug 2>/dev/null || ~/.claude/skills/gstack/browse/bin/remote-slug 2>/dev/null || basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
+_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
+REMOTE_SLUG=$(browse/bin/remote-slug 2>/dev/null || "$_ROOT/.claude/skills/gstack/browse/bin/remote-slug" 2>/dev/null || "$_ROOT/.agents/skills/gstack/browse/bin/remote-slug" 2>/dev/null || "$HOME/.claude/skills/gstack/browse/bin/remote-slug" 2>/dev/null || "$HOME/.agents/skills/gstack/browse/bin/remote-slug" 2>/dev/null || basename "${_ROOT:-$(pwd)}")
 PROJECT_HISTORY="$HOME/.gstack/projects/$REMOTE_SLUG/greptile-history.md"
 ```
 
@@ -183,7 +184,8 @@ When classifying comments, also assess whether Greptile's implied severity match
 
 Before writing, ensure both directories exist:
 ```bash
-REMOTE_SLUG=$(browse/bin/remote-slug 2>/dev/null || ~/.claude/skills/gstack/browse/bin/remote-slug 2>/dev/null || basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
+_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
+REMOTE_SLUG=$(browse/bin/remote-slug 2>/dev/null || "$_ROOT/.claude/skills/gstack/browse/bin/remote-slug" 2>/dev/null || "$_ROOT/.agents/skills/gstack/browse/bin/remote-slug" 2>/dev/null || "$HOME/.claude/skills/gstack/browse/bin/remote-slug" 2>/dev/null || "$HOME/.agents/skills/gstack/browse/bin/remote-slug" 2>/dev/null || basename "${_ROOT:-$(pwd)}")
 mkdir -p "$HOME/.gstack/projects/$REMOTE_SLUG"
 mkdir -p ~/.gstack
 ```

@@ -18,11 +18,18 @@ allowed-tools:
 ## Update Check (run first)
 
 ```bash
-_UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
+_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
+_GSTACK=""
+[ -z "$_GSTACK" ] && [ -n "$_ROOT" ] && [ -d "$_ROOT/.claude/skills/gstack" ] && _GSTACK="$_ROOT/.claude/skills/gstack"
+[ -z "$_GSTACK" ] && [ -n "$_ROOT" ] && [ -d "$_ROOT/.agents/skills/gstack" ] && _GSTACK="$_ROOT/.agents/skills/gstack"
+[ -z "$_GSTACK" ] && [ -d "$HOME/.claude/skills/gstack" ] && _GSTACK="$HOME/.claude/skills/gstack"
+[ -z "$_GSTACK" ] && [ -d "$HOME/.agents/skills/gstack" ] && _GSTACK="$HOME/.agents/skills/gstack"
+_UPD=""
+[ -n "$_GSTACK" ] && _UPD=$("$_GSTACK/bin/gstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD" || true
 ```
 
-If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
+If output shows `UPGRADE_AVAILABLE <old> <new>`: read `gstack-upgrade/SKILL.md` from the active gstack install (for example `~/.claude/skills/gstack/gstack-upgrade/SKILL.md`, `~/.agents/skills/gstack/gstack-upgrade/SKILL.md`, `.claude/skills/gstack/gstack-upgrade/SKILL.md`, or `.agents/skills/gstack/gstack-upgrade/SKILL.md`) and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
 
 # Ship: Fully Automated Ship Workflow
 
@@ -104,7 +111,7 @@ Evals are mandatory when prompt-related files change. Skip this step entirely if
 git diff origin/main --name-only
 ```
 
-Match against these patterns (from CLAUDE.md):
+Match against these patterns (from `CLAUDE.md` or `AGENTS.md`):
 - `app/services/*_prompt_builder.rb`
 - `app/services/*_generation_service.rb`, `*_writer_service.rb`, `*_designer_service.rb`
 - `app/services/*_evaluator.rb`, `*_scorer.rb`, `*_classifier_service.rb`, `*_analyzer.rb`
@@ -160,7 +167,7 @@ If multiple suites need to run, run them sequentially (each needs a test lane). 
 
 Review the diff for structural issues that tests don't catch.
 
-1. Read `.claude/skills/review/checklist.md`. If the file cannot be read, **STOP** and report the error.
+1. Read the installed review checklist (`~/.claude/skills/review/checklist.md`, `~/.agents/skills/review/checklist.md`, `.claude/skills/review/checklist.md`, or `.agents/skills/review/checklist.md`). If the file cannot be read, **STOP** and report the error.
 
 2. Run `git diff origin/main` to get the full diff (scoped to feature changes against the freshly-fetched remote main).
 
@@ -188,7 +195,7 @@ Save the review output — it goes into the PR body in Step 8.
 
 ## Step 3.75: Address Greptile review comments (if PR exists)
 
-Read `.claude/skills/review/greptile-triage.md` and follow the fetch, filter, classify, and **escalation detection** steps.
+Read the installed Greptile triage guide (`~/.claude/skills/review/greptile-triage.md`, `~/.agents/skills/review/greptile-triage.md`, `.claude/skills/review/greptile-triage.md`, or `.agents/skills/review/greptile-triage.md`) and follow the fetch, filter, classify, and **escalation detection** steps.
 
 **If no PR exists, `gh` fails, API returns an error, or there are zero Greptile comments:** Skip this step silently. Continue to Step 4.
 
@@ -270,7 +277,7 @@ For each classified comment:
 
 Cross-reference the project's TODOS.md against the changes being shipped. Mark completed items automatically; prompt only if the file is missing or disorganized.
 
-Read `.claude/skills/review/TODOS-format.md` for the canonical format reference.
+Read the installed TODO format reference (`~/.claude/skills/review/TODOS-format.md`, `~/.agents/skills/review/TODOS-format.md`, `.claude/skills/review/TODOS-format.md`, or `.agents/skills/review/TODOS-format.md`).
 
 **1. Check if TODOS.md exists** in the repository root.
 

@@ -11,11 +11,43 @@
 
 import { COMMAND_DESCRIPTIONS } from '../browse/src/commands';
 import { SNAPSHOT_FLAGS } from '../browse/src/snapshot';
+import { formatInlineCodeList, installDocNames, listInstallPresets } from '../lib/install-presets';
 import * as fs from 'fs';
 import * as path from 'path';
 
 const ROOT = path.resolve(import.meta.dir, '..');
 const DRY_RUN = process.argv.includes('--dry-run');
+const PRESETS = listInstallPresets();
+
+function workspacePath(relativePath: string): string[] {
+  return PRESETS.map((preset) => `${preset.dotDir}/${preset.skillsDir}/${relativePath}`);
+}
+
+function globalPath(relativePath: string): string[] {
+  return PRESETS.map((preset) => `~/${preset.dotDir}/${preset.skillsDir}/${relativePath}`);
+}
+
+function installPathExamples(relativePath: string): string {
+  return formatInlineCodeList([...globalPath(relativePath), ...workspacePath(relativePath)]);
+}
+
+function reviewSkillExamples(relativePath: string): string {
+  return installPathExamples(`review/${relativePath}`);
+}
+
+function renderWorkspaceSearch(relativePath: string, varName: string, predicate: string): string {
+  return PRESETS.map((preset) => {
+    const candidate = `$_ROOT/${preset.dotDir}/${preset.skillsDir}/${relativePath}`;
+    return `[ -z "$${varName}" ] && [ -n "$_ROOT" ] && [ ${predicate.replaceAll('__PATH__', `"${candidate}"`)} ] && ${varName}="${candidate}"`;
+  }).join('\n');
+}
+
+function renderGlobalSearch(relativePath: string, varName: string, predicate: string): string {
+  return PRESETS.map((preset) => {
+    const candidate = `$HOME/${preset.dotDir}/${preset.skillsDir}/${relativePath}`;
+    return `[ -z "$${varName}" ] && [ ${predicate.replaceAll('__PATH__', `"${candidate}"`)} ] && ${varName}="${candidate}"`;
+  }).join('\n');
+}
 
 // ─── Placeholder Resolvers ──────────────────────────────────
 
@@ -98,21 +130,26 @@ function generateUpdateCheck(): string {
   return `## Update Check (run first)
 
 \`\`\`bash
-_UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
+_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
+_GSTACK=""
+${renderWorkspaceSearch('gstack', '_GSTACK', '-d __PATH__')}
+${renderGlobalSearch('gstack', '_GSTACK', '-d __PATH__')}
+_UPD=""
+[ -n "$_GSTACK" ] && _UPD=$("$_GSTACK/bin/gstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD" || true
 \`\`\`
 
-If output shows \`UPGRADE_AVAILABLE <old> <new>\`: read \`~/.claude/skills/gstack/gstack-upgrade/SKILL.md\` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If \`JUST_UPGRADED <from> <to>\`: tell user "Running gstack v{to} (just updated!)" and continue.`;
+If output shows \`UPGRADE_AVAILABLE <old> <new>\`: read \`gstack-upgrade/SKILL.md\` from the active gstack install (for example ${installPathExamples('gstack/gstack-upgrade/SKILL.md')}) and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If \`JUST_UPGRADED <from> <to>\`: tell user "Running gstack v{to} (just updated!)" and continue.`;
 }
 
 function generateBrowseSetup(): string {
   return `## SETUP (run this check BEFORE any browse command)
 
 \`\`\`bash
-_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
 B=""
-[ -n "$_ROOT" ] && [ -x "$_ROOT/.claude/skills/gstack/browse/dist/browse" ] && B="$_ROOT/.claude/skills/gstack/browse/dist/browse"
-[ -z "$B" ] && B=~/.claude/skills/gstack/browse/dist/browse
+${renderWorkspaceSearch('gstack/browse/dist/browse', 'B', '-x __PATH__')}
+${renderGlobalSearch('gstack/browse/dist/browse', 'B', '-x __PATH__')}
 if [ -x "$B" ]; then
   echo "READY: $B"
 else
@@ -124,13 +161,18 @@ If \`NEEDS_SETUP\`:
 1. Tell the user: "gstack browse needs a one-time build (~10 seconds). OK to proceed?" Then STOP and wait.
 2. Run: \`cd <SKILL_DIR> && ./setup\`
 3. If \`bun\` is not installed: \`curl -fsSL https://bun.sh/install | bash\``;
-}
+  }
 
 const RESOLVERS: Record<string, () => string> = {
   COMMAND_REFERENCE: generateCommandReference,
   SNAPSHOT_FLAGS: generateSnapshotFlags,
   UPDATE_CHECK: generateUpdateCheck,
   BROWSE_SETUP: generateBrowseSetup,
+  ASSISTANT_DOC_FILES: () => formatInlineCodeList(installDocNames()),
+  REVIEW_CHECKLIST_PATHS: () => reviewSkillExamples('checklist.md'),
+  REVIEW_GREPTILE_TRIAGE_PATHS: () => reviewSkillExamples('greptile-triage.md'),
+  REVIEW_TODOS_FORMAT_PATHS: () => reviewSkillExamples('TODOS-format.md'),
+  LOCAL_GSTACK_DIR_PATHS: () => formatInlineCodeList(workspacePath('gstack')),
 };
 
 // ─── Template Processing ────────────────────────────────────
