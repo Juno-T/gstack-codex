@@ -1,17 +1,29 @@
 #!/bin/bash
 # Shim: delegates to compiled find-browse binary, falls back to basic discovery.
 # The compiled binary handles git root detection for workspace-local installs.
+source "$(cd "$(dirname "$0")/../.." && pwd)/lib/install-preset.sh"
+
 DIR="$(cd "$(dirname "$0")/.." && pwd)/dist"
 if test -x "$DIR/find-browse"; then
   exec "$DIR/find-browse" "$@"
 fi
 # Fallback: basic discovery
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-if [ -n "$ROOT" ] && test -x "$ROOT/.claude/skills/gstack/browse/dist/browse"; then
-  echo "$ROOT/.claude/skills/gstack/browse/dist/browse"
-elif test -x "$HOME/.claude/skills/gstack/browse/dist/browse"; then
-  echo "$HOME/.claude/skills/gstack/browse/dist/browse"
-else
-  echo "ERROR: browse binary not found. Run: cd <skill-dir> && ./setup" >&2
-  exit 1
-fi
+for PRESET in $(gstack_supported_presets); do
+  DOT_DIR="$(gstack_preset_dot_dir "$PRESET")"
+  SKILLS_DIR_NAME="$(gstack_preset_skills_dir "$PRESET")"
+  if [ -n "$ROOT" ] && test -x "$ROOT/$DOT_DIR/$SKILLS_DIR_NAME/gstack/browse/dist/browse"; then
+    echo "$ROOT/$DOT_DIR/$SKILLS_DIR_NAME/gstack/browse/dist/browse"
+    exit 0
+  fi
+done
+for PRESET in $(gstack_supported_presets); do
+  DOT_DIR="$(gstack_preset_dot_dir "$PRESET")"
+  SKILLS_DIR_NAME="$(gstack_preset_skills_dir "$PRESET")"
+  if test -x "$HOME/$DOT_DIR/$SKILLS_DIR_NAME/gstack/browse/dist/browse"; then
+    echo "$HOME/$DOT_DIR/$SKILLS_DIR_NAME/gstack/browse/dist/browse"
+    exit 0
+  fi
+done
+echo "ERROR: browse binary not found. Run: cd <skill-dir> && ./setup" >&2
+exit 1

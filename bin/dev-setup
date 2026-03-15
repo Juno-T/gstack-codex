@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Set up gstack for local development — test skills from within this repo.
 #
-# Creates .claude/skills/gstack → (symlink to repo root) so Claude Code
-# discovers skills from your working tree. Changes take effect immediately.
+# Creates a preset-specific skills link pointing to the repo root so the active
+# assistant runtime discovers skills from your working tree. Changes take effect
+# immediately.
 #
 # Also copies .env from the main worktree if this is a Conductor workspace
 # or git worktree (so API keys carry over automatically).
@@ -12,6 +13,11 @@
 set -e
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+source "$REPO_ROOT/lib/install-preset.sh"
+
+PRESET="$(gstack_resolve_preset "${1:-}")"
+PRESET_DOT_DIR="$(gstack_preset_dot_dir "$PRESET")"
+PRESET_SKILLS_DIR="$(gstack_preset_skills_dir "$PRESET")"
 
 # 1. Copy .env from main worktree (if we're a worktree and don't have one)
 if [ ! -f "$REPO_ROOT/.env" ]; then
@@ -28,27 +34,27 @@ if [ ! -d "$REPO_ROOT/node_modules" ]; then
   (cd "$REPO_ROOT" && bun install)
 fi
 
-# 3. Create .claude/skills/ inside the repo
-mkdir -p "$REPO_ROOT/.claude/skills"
+# 3. Create the preset install dir inside the repo
+mkdir -p "$REPO_ROOT/$PRESET_DOT_DIR/$PRESET_SKILLS_DIR"
 
-# 4. Symlink .claude/skills/gstack → repo root
-# This makes setup think it's inside a real .claude/skills/ directory
-GSTACK_LINK="$REPO_ROOT/.claude/skills/gstack"
+# 4. Symlink the preset install path to the repo root
+# This makes setup think it's inside a real install directory
+GSTACK_LINK="$REPO_ROOT/$PRESET_DOT_DIR/$PRESET_SKILLS_DIR/gstack"
 if [ -L "$GSTACK_LINK" ]; then
   echo "Updating existing symlink..."
   rm "$GSTACK_LINK"
 elif [ -d "$GSTACK_LINK" ]; then
-  echo "Error: .claude/skills/gstack is a real directory, not a symlink." >&2
+  echo "Error: $PRESET_DOT_DIR/$PRESET_SKILLS_DIR/gstack is a real directory, not a symlink." >&2
   echo "Remove it manually if you want to use dev mode." >&2
   exit 1
 fi
 ln -s "$REPO_ROOT" "$GSTACK_LINK"
 
-# 5. Run setup via the symlink so it detects .claude/skills/ as its parent
-"$GSTACK_LINK/setup"
+# 5. Run setup via the symlink so it detects the preset install root as its parent
+"$GSTACK_LINK/setup" "$PRESET"
 
 echo ""
-echo "Dev mode active. Skills resolve from this working tree."
+echo "Dev mode active for preset '$PRESET'. Skills resolve from this working tree."
 echo "Edit any SKILL.md and test immediately — no copy/deploy needed."
 echo ""
-echo "To tear down: bin/dev-teardown"
+echo "To tear down: bin/dev-teardown $PRESET"

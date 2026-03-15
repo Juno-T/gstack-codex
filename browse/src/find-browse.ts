@@ -6,8 +6,8 @@
  */
 
 import { existsSync } from 'fs';
-import { join } from 'path';
 import { homedir } from 'os';
+import { candidateBrowseBinaries } from '../../lib/install-presets';
 
 // ─── Binary Discovery ───────────────────────────────────────────
 
@@ -24,20 +24,14 @@ function getGitRoot(): string | null {
   }
 }
 
-export function locateBinary(): string | null {
-  const root = getGitRoot();
-  const home = homedir();
+export function getCandidateBinaryPaths(root: string | null = getGitRoot(), home: string = homedir()): string[] {
+  return candidateBrowseBinaries(root, home);
+}
 
-  // Workspace-local takes priority (for development)
-  if (root) {
-    const local = join(root, '.claude', 'skills', 'gstack', 'browse', 'dist', 'browse');
-    if (existsSync(local)) return local;
+export function locateBinary(root: string | null = getGitRoot(), home: string = homedir()): string | null {
+  for (const candidate of getCandidateBinaryPaths(root, home)) {
+    if (existsSync(candidate)) return candidate;
   }
-
-  // Global fallback
-  const global = join(home, '.claude', 'skills', 'gstack', 'browse', 'dist', 'browse');
-  if (existsSync(global)) return global;
-
   return null;
 }
 
@@ -53,4 +47,6 @@ function main() {
   console.log(bin);
 }
 
-main();
+if (import.meta.main) {
+  main();
+}

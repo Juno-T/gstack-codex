@@ -1,0 +1,3 @@
+preset	dot_dir	doc_file	skills_dir
+claude	.claude	CLAUDE.md	skills
+agents	.agents	AGENTS.md	skills
