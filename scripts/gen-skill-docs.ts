@@ -20,11 +20,11 @@ const DRY_RUN = process.argv.includes('--dry-run');
 const PRESETS = listInstallPresets();
 
 function workspacePath(relativePath: string): string[] {
-  return PRESETS.map((preset) => `${preset.dotDir}/${preset.skillsDir}/${relativePath}`);
+  return Array.from(new Set(PRESETS.map((preset) => `${preset.dotDir}/${preset.skillsDir}/${relativePath}`)));
 }
 
 function globalPath(relativePath: string): string[] {
-  return PRESETS.map((preset) => `~/${preset.dotDir}/${preset.skillsDir}/${relativePath}`);
+  return Array.from(new Set(PRESETS.map((preset) => `~/${preset.dotDir}/${preset.skillsDir}/${relativePath}`)));
 }
 
 function installPathExamples(relativePath: string): string {
@@ -36,15 +36,15 @@ function reviewSkillExamples(relativePath: string): string {
 }
 
 function renderWorkspaceSearch(relativePath: string, varName: string, predicate: string): string {
-  return PRESETS.map((preset) => {
-    const candidate = `$_ROOT/${preset.dotDir}/${preset.skillsDir}/${relativePath}`;
+  return workspacePath(relativePath).map((candidatePath) => {
+    const candidate = `$_ROOT/${candidatePath}`;
     return `[ -z "$${varName}" ] && [ -n "$_ROOT" ] && [ ${predicate.replaceAll('__PATH__', `"${candidate}"`)} ] && ${varName}="${candidate}"`;
   }).join('\n');
 }
 
 function renderGlobalSearch(relativePath: string, varName: string, predicate: string): string {
-  return PRESETS.map((preset) => {
-    const candidate = `$HOME/${preset.dotDir}/${preset.skillsDir}/${relativePath}`;
+  return globalPath(relativePath).map((candidatePath) => {
+    const candidate = candidatePath.replace(/^~\//, '$HOME/');
     return `[ -z "$${varName}" ] && [ ${predicate.replaceAll('__PATH__', `"${candidate}"`)} ] && ${varName}="${candidate}"`;
   }).join('\n');
 }

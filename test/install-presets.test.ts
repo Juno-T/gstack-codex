@@ -19,6 +19,12 @@ describe('install presets', () => {
     expect(preset.docFile).toBe('AGENTS.md');
   });
 
+  test('resolves codex preset', () => {
+    const preset = resolveInstallPreset('codex');
+    expect(preset.dotDir).toBe('.agents');
+    expect(preset.docFile).toBe('AGENTS.md');
+  });
+
   test('candidate gstack dirs include workspace and global locations for both presets', () => {
     expect(candidateGstackDirs('/repo', '/home/user')).toEqual([
       '/repo/.claude/skills/gstack',

@@ -2,9 +2,19 @@
 
 This repository is a fork of the original `garrytan/gstack`.
 
-Purpose: make the install and discovery paths configurable so the same skill set can run in multiple assistant environments instead of assuming Claude Code and `.claude/` everywhere. The current presets are `claude` and `agents` (Codex, Amp, etc.).
+Purpose: make the install and discovery paths configurable so the same skill set can run in multiple assistant environments instead of assuming Claude Code and `.claude/` everywhere. The current presets are `claude`, `agents`, and `codex`.
 
 ## Fork Install
+
+### Codex preset
+
+```bash
+git clone https://github.com/Juno-T/gstack-codex.git ~/.agents/skills/gstack
+cd ~/.agents/skills/gstack
+./setup codex
+```
+
+`codex` uses the same `.agents/skills/gstack` install path as `agents`, and also writes a Codex rule so `.agents/skills/gstack/browse/dist/browse` can run outside the sandbox without prompting.
 
 ### Agents preset (Codex, Amp, etc.)
 

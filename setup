@@ -12,6 +12,8 @@ PRESET_DOT_DIR="$(gstack_preset_dot_dir "$PRESET")"
 PRESET_SKILLS_DIR="$(gstack_preset_skills_dir "$PRESET")"
 BROWSE_BIN="$GSTACK_DIR/browse/dist/browse"
 FIRST_RUN=0
+CODEX_RULES_DIR="$HOME/.codex/rules"
+CODEX_RULES_FILE="$CODEX_RULES_DIR/default.rules"
 
 if [ ! -d "$HOME/.gstack" ]; then
   FIRST_RUN=1
@@ -24,6 +26,32 @@ ensure_playwright_browser() {
     cd "$GSTACK_DIR"
     bun --eval 'import { chromium } from "playwright"; const browser = await chromium.launch(); await browser.close();'
   ) >/dev/null 2>&1
+}
+
+ensure_codex_browse_rule() {
+  mkdir -p "$CODEX_RULES_DIR"
+
+  local match_tag="pattern = [\"$BROWSE_BIN\"]"
+  if [ -f "$CODEX_RULES_FILE" ] && grep -Fq "$match_tag" "$CODEX_RULES_FILE"; then
+    return 0
+  fi
+
+  cat >> "$CODEX_RULES_FILE" <<EOF
+
+# gstack browse: allow the installed browse binary without prompting
+prefix_rule(
+    pattern = ["$BROWSE_BIN"],
+    decision = "allow",
+    justification = "Allow the installed gstack browse binary to run outside the sandbox without prompting.",
+    match = [
+        "$BROWSE_BIN goto https://example.com",
+        "$BROWSE_BIN snapshot -i",
+    ],
+    not_match = [
+        "${BROWSE_BIN}.bak snapshot -i",
+    ],
+)
+EOF
 }
 
 # 1. Build browse binary if needed (smart rebuild: stale sources, package.json, lock)
@@ -73,6 +101,10 @@ fi
 # 3. Ensure ~/.gstack global state directory exists
 mkdir -p "$HOME/.gstack/projects"
 
+if [ "$PRESET" = "codex" ]; then
+  ensure_codex_browse_rule
+fi
+
 # 4. Only create skill symlinks if we're inside the preset's install directory
 SKILLS_BASENAME="$(basename "$SKILLS_DIR")"
 SKILLS_PARENT_BASENAME="$(basename "$SKILLS_PARENT_DIR")"
@@ -94,6 +126,9 @@ if [ "$SKILLS_BASENAME" = "$PRESET_SKILLS_DIR" ] && [ "$SKILLS_PARENT_BASENAME" 
 
   echo "gstack ready."
   echo "  browse: $BROWSE_BIN"
+  if [ "$PRESET" = "codex" ]; then
+    echo "  codex rules: $CODEX_RULES_FILE"
+  fi
   if [ ${#linked[@]} -gt 0 ]; then
     echo "  linked skills: ${linked[*]}"
   fi
@@ -101,6 +136,9 @@ else
   echo "gstack ready."
   echo "  browse: $BROWSE_BIN"
   echo "  preset: $PRESET"
+  if [ "$PRESET" = "codex" ]; then
+    echo "  codex rules: $CODEX_RULES_FILE"
+  fi
   echo "  (skipped skill symlinks — not inside $PRESET_DOT_DIR/$PRESET_SKILLS_DIR/)"
 fi
 

@@ -65,22 +65,40 @@ export function globalBrowseBinary(home: string, preset: InstallPreset): string 
 
 export function candidateGstackDirs(root: string | null, home: string): string[] {
   const dirs: string[] = [];
+  const seen = new Set<string>();
   for (const preset of listInstallPresets()) {
     if (root) {
-      dirs.push(workspaceGstackDir(root, preset));
+      const workspace = workspaceGstackDir(root, preset);
+      if (!seen.has(workspace)) {
+        seen.add(workspace);
+        dirs.push(workspace);
+      }
     }
-    dirs.push(globalGstackDir(home, preset));
+    const global = globalGstackDir(home, preset);
+    if (!seen.has(global)) {
+      seen.add(global);
+      dirs.push(global);
+    }
   }
   return dirs;
 }
 
 export function candidateBrowseBinaries(root: string | null, home: string): string[] {
   const bins: string[] = [];
+  const seen = new Set<string>();
   for (const preset of listInstallPresets()) {
     if (root) {
-      bins.push(workspaceBrowseBinary(root, preset));
+      const workspace = workspaceBrowseBinary(root, preset);
+      if (!seen.has(workspace)) {
+        seen.add(workspace);
+        bins.push(workspace);
+      }
     }
-    bins.push(globalBrowseBinary(home, preset));
+    const global = globalBrowseBinary(home, preset);
+    if (!seen.has(global)) {
+      seen.add(global);
+      bins.push(global);
+    }
   }
   return bins;
 }
