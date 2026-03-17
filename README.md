@@ -36,7 +36,7 @@ For a vendored project install, copy this fork into either `.agents/skills/gstac
 
 ---
 
-Original upstream README follows below.
+Original upstream README follows below. It is intentionally preserved and still describes the original Claude-first install assumptions; use the fork-specific instructions above for this repo.
 
 ---
 

@@ -94,17 +94,17 @@ project uses.
 
 ## Vendored symlink awareness
 
-When developing gstack, `.claude/skills/gstack` may be a symlink back to this
+When developing gstack, `.claude/skills/gstack` or `.agents/skills/gstack` may be a symlink back to this
 working directory (gitignored). This means skill changes are **live immediately** —
 great for rapid iteration, risky during big refactors where half-written skills
 could break other Claude Code sessions using gstack concurrently.
 
-**Check once per session:** Run `ls -la .claude/skills/gstack` to see if it's a
+**Check once per session:** Run `ls -la .claude/skills/gstack` or `ls -la .agents/skills/gstack` to see if it's a
 symlink or a real copy. If it's a symlink to your working directory, be aware that:
 - Template changes + `bun run gen:skill-docs` immediately affect all gstack invocations
 - Breaking changes to SKILL.md.tmpl files can break concurrent gstack sessions
-- During large refactors, remove the symlink (`rm .claude/skills/gstack`) so the
-  global install at `~/.claude/skills/gstack/` is used instead
+- During large refactors, remove the symlink (`rm .claude/skills/gstack` or `rm .agents/skills/gstack`) so the
+  global install at `~/.claude/skills/gstack/` or `~/.agents/skills/gstack/` is used instead
 
 **For plan reviews:** When reviewing plans that modify skill templates or the
 gen-skill-docs pipeline, consider whether the changes should be tested in isolation
@@ -144,10 +144,10 @@ regenerated SKILL.md shifts prompt context.
 
 ## Deploying to the active skill
 
-The active skill lives at `~/.claude/skills/gstack/`. After making changes:
+The active skill lives at `~/.claude/skills/gstack/` or `~/.agents/skills/gstack/`. After making changes:
 
 1. Push your branch
-2. Fetch and reset in the skill directory: `cd ~/.claude/skills/gstack && git fetch origin && git reset --hard origin/main`
-3. Rebuild: `cd ~/.claude/skills/gstack && bun run build`
+2. Fetch and reset in the skill directory: `cd ~/.claude/skills/gstack && git fetch origin && git reset --hard origin/main` or `cd ~/.agents/skills/gstack && git fetch origin && git reset --hard origin/main`
+3. Rebuild: `cd ~/.claude/skills/gstack && bun run build` or `cd ~/.agents/skills/gstack && bun run build`
 
-Or copy the binary directly: `cp browse/dist/browse ~/.claude/skills/gstack/browse/dist/browse`
+Or copy the binary directly: `cp browse/dist/browse ~/.claude/skills/gstack/browse/dist/browse` or `cp browse/dist/browse ~/.agents/skills/gstack/browse/dist/browse`

@@ -1,6 +1,6 @@
 # Architecture
 
-This document explains **why** gstack is built the way it is. For setup and commands, see CLAUDE.md. For contributing, see CONTRIBUTING.md.
+This document explains **why** gstack is built the way it is. For setup and commands, see the assistant instructions file (`CLAUDE.md` or `AGENTS.md`). For contributing, see CONTRIBUTING.md.
 
 ## The core idea
 
@@ -39,7 +39,7 @@ First call starts everything (~3s). Every call after: ~100-200ms.
 
 Node.js would work. Bun is better here for three reasons:
 
-1. **Compiled binaries.** `bun build --compile` produces a single ~58MB executable. No `node_modules` at runtime, no `npx`, no PATH configuration. The binary just runs. This matters because gstack installs into `~/.claude/skills/` where users don't expect to manage a Node.js project.
+1. **Compiled binaries.** `bun build --compile` produces a single ~58MB executable. No `node_modules` at runtime, no `npx`, no PATH configuration. The binary just runs. This matters because gstack installs into `~/.claude/skills/` or `~/.agents/skills/` where users don't expect to manage a Node.js project.
 
 2. **Native SQLite.** Cookie decryption reads Chromium's SQLite cookie database directly. Bun has `new Database()` built in — no `better-sqlite3`, no native addon compilation, no gyp. One less thing that breaks on different machines.
 

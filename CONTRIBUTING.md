@@ -4,17 +4,17 @@ Thanks for wanting to make gstack better. Whether you're fixing a typo in a skil
 
 ## Quick start
 
-gstack skills are Markdown files that Claude Code discovers from a `skills/` directory. Normally they live at `~/.claude/skills/gstack/` (your global install). But when you're developing gstack itself, you want Claude Code to use the skills *in your working tree* — so edits take effect instantly without copying or deploying anything.
+gstack skills are Markdown files that the assistant discovers from a `skills/` directory. Normally they live at `~/.claude/skills/gstack/` or `~/.agents/skills/gstack/` (your global install, depending on preset). But when you're developing gstack itself, you want the active runtime to use the skills *in your working tree* — so edits take effect instantly without copying or deploying anything.
 
-That's what dev mode does. It symlinks your repo into the local `.claude/skills/` directory so Claude Code reads skills straight from your checkout.
+That's what dev mode does. It symlinks your repo into the local preset directory (for example `.claude/skills/` or `.agents/skills/`) so the active runtime reads skills straight from your checkout.
 
 ```bash
 git clone <repo> && cd gstack
 bun install                    # install dependencies
-bin/dev-setup                  # activate dev mode
+bin/dev-setup [claude|agents|codex]  # activate dev mode for a preset
 ```
 
-Now edit any `SKILL.md`, invoke it in Claude Code (e.g. `/review`), and see your changes live. When you're done developing:
+Now edit any `SKILL.md`, invoke it in your assistant runtime (e.g. `/review`), and see your changes live. When you're done developing:
 
 ```bash
 bin/dev-teardown               # deactivate — back to your global install
@@ -30,6 +30,8 @@ would make it better.
 
 ```bash
 ~/.claude/skills/gstack/bin/gstack-config set gstack_contributor true
+# or, if you're using the agents/codex preset:
+~/.agents/skills/gstack/bin/gstack-config set gstack_contributor true
 ```
 
 The logs are for **you**. When something bugs you enough to fix, the report is
@@ -45,7 +47,9 @@ the issue, fix it, and open a PR.
    ```bash
    # In your core project (the one where gstack annoyed you)
    ln -sfn /path/to/your/gstack-fork .claude/skills/gstack
+   # or: ln -sfn /path/to/your/gstack-fork .agents/skills/gstack
    cd .claude/skills/gstack && bun install && bun run build
+   # or: cd .agents/skills/gstack && bun install && bun run build
    ```
 5. **Fix the issue** — your changes are live immediately in this project
 6. **Test by actually using gstack** — do the thing that annoyed you, verify it's fixed
@@ -57,13 +61,13 @@ project where you actually felt the pain.
 ## Working on gstack inside the gstack repo
 
 When you're editing gstack skills and want to test them by actually using gstack
-in the same repo, `bin/dev-setup` wires this up. It creates `.claude/skills/`
-symlinks (gitignored) pointing back to your working tree, so Claude Code uses
+in the same repo, `bin/dev-setup` wires this up. It creates preset-specific skill
+symlinks (gitignored) pointing back to your working tree, so the active runtime uses
 your local edits instead of the global install.
 
 ```
 gstack/                          <- your working tree
-├── .claude/skills/              <- created by dev-setup (gitignored)
+├── .claude/skills/              <- or .agents/skills/, created by dev-setup
 │   ├── gstack -> ../../         <- symlink back to repo root
 │   ├── review -> gstack/review
 │   ├── ship -> gstack/ship
@@ -241,10 +245,10 @@ When Conductor creates a new workspace, `bin/dev-setup` runs automatically. It d
 - **SKILL.md files are generated.** Edit the `.tmpl` template, not the `.md`. Run `bun run gen:skill-docs` to regenerate.
 - **TODOS.md is the unified backlog.** Organized by skill/component with P0-P4 priorities. `/ship` auto-detects completed items. All planning/review/retro skills read it for context.
 - **Browse source changes need a rebuild.** If you touch `browse/src/*.ts`, run `bun run build`.
-- **Dev mode shadows your global install.** Project-local skills take priority over `~/.claude/skills/gstack`. `bin/dev-teardown` restores the global one.
+- **Dev mode shadows your global install.** Project-local skills take priority over `~/.claude/skills/gstack` or `~/.agents/skills/gstack`. `bin/dev-teardown` restores the global one.
 - **Conductor workspaces are independent.** Each workspace is its own git worktree. `bin/dev-setup` runs automatically via `conductor.json`.
 - **`.env` propagates across worktrees.** Set it once in the main repo, all Conductor workspaces get it.
-- **`.claude/skills/` is gitignored.** The symlinks never get committed.
+- **Preset skill dirs are gitignored.** `.claude/skills/` and `.agents/skills/` symlinks never get committed.
 
 ## Testing your changes in a real project
 
@@ -255,7 +259,9 @@ do real work:
 ```bash
 # In your core project
 ln -sfn /path/to/your/gstack-checkout .claude/skills/gstack
+# or: ln -sfn /path/to/your/gstack-checkout .agents/skills/gstack
 cd .claude/skills/gstack && bun install && bun run build
+# or: cd .agents/skills/gstack && bun install && bun run build
 ```
 
 Now every gstack skill invocation in this project uses your working tree. Edit a
@@ -266,9 +272,10 @@ it up immediately.
 
 ```bash
 rm .claude/skills/gstack
+# or: rm .agents/skills/gstack
 ```
 
-Claude Code falls back to `~/.claude/skills/gstack/` automatically.
+The runtime falls back to `~/.claude/skills/gstack/` or `~/.agents/skills/gstack/` automatically, depending on your preset.
 
 ### Alternative: point your global install at a branch
 
@@ -276,6 +283,7 @@ If you don't want per-project symlinks, you can switch the global install:
 
 ```bash
 cd ~/.claude/skills/gstack
+# or: cd ~/.agents/skills/gstack
 git fetch origin
 git checkout origin/<branch>
 bun install && bun run build

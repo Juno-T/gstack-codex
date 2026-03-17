@@ -56,6 +56,12 @@ describe('gen-skill-docs', () => {
     expect(content).toContain('~/.agents/skills/gstack/gstack-upgrade/SKILL.md');
   });
 
+  test('generated preamble resolves contributor mode via the active gstack install', () => {
+    const content = fs.readFileSync(path.join(ROOT, 'SKILL.md'), 'utf-8');
+    expect(content).toContain('[ -n "$_GSTACK" ] && _CONTRIB=$("$_GSTACK/bin/gstack-config" get gstack_contributor 2>/dev/null || true)');
+    expect(content).not.toContain('~/.claude/skills/gstack/bin/gstack-config get gstack_contributor');
+  });
+
   test('generated plan/review docs mention both assistant doc filenames', () => {
     const ceoContent = fs.readFileSync(path.join(ROOT, 'plan-ceo-review', 'SKILL.md'), 'utf-8');
     const engContent = fs.readFileSync(path.join(ROOT, 'plan-eng-review', 'SKILL.md'), 'utf-8');

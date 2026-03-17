@@ -286,7 +286,7 @@ Write `DESIGN.md` to the repo root with this structure:
 | [today] | Initial design system created | Created by /design-consultation based on [product context / research] |
 ```
 
-**Update CLAUDE.md** (or create it if it doesn't exist) — append this section:
+**Update the assistant instructions file** (`CLAUDE.md` or `AGENTS.md`, create it if it doesn't exist) — append this section:
 
 ```markdown
 ## Design System
@@ -299,7 +299,7 @@ In QA mode, flag any code that doesn't match DESIGN.md.
 **AskUserQuestion Q-final — show summary and confirm:**
 
 List all decisions. Flag any that used agent defaults without explicit user confirmation (the user should know what they're shipping). Options:
-- A) Ship it — write DESIGN.md and CLAUDE.md
+- A) Ship it — write `DESIGN.md` and the assistant instructions file
 - B) I want to change something (specify what)
 - C) Start over
 

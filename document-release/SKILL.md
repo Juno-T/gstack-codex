@@ -3,7 +3,8 @@ name: document-release
 version: 1.0.0
 description: |
   Post-ship documentation update. Reads all project docs, cross-references the
-  diff, updates README/ARCHITECTURE/CONTRIBUTING/CLAUDE.md to match what shipped,
+  diff, updates README/ARCHITECTURE/CONTRIBUTING and the assistant instructions
+  file (`CLAUDE.md` or `AGENTS.md`) to match what shipped,
   polishes CHANGELOG voice, cleans up TODOS, and optionally bumps VERSION.
 allowed-tools:
   - Bash
@@ -20,18 +21,26 @@ allowed-tools:
 ## Preamble (run first)
 
 ```bash
-_UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
+_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
+_GSTACK=""
+[ -z "$_GSTACK" ] && [ -n "$_ROOT" ] && [ -d "$_ROOT/.claude/skills/gstack" ] && _GSTACK="$_ROOT/.claude/skills/gstack"
+[ -z "$_GSTACK" ] && [ -n "$_ROOT" ] && [ -d "$_ROOT/.agents/skills/gstack" ] && _GSTACK="$_ROOT/.agents/skills/gstack"
+[ -z "$_GSTACK" ] && [ -d "$HOME/.claude/skills/gstack" ] && _GSTACK="$HOME/.claude/skills/gstack"
+[ -z "$_GSTACK" ] && [ -d "$HOME/.agents/skills/gstack" ] && _GSTACK="$HOME/.agents/skills/gstack"
+_UPD=""
+[ -n "$_GSTACK" ] && _UPD=$("$_GSTACK/bin/gstack-update-check" 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD" || true
 mkdir -p ~/.gstack/sessions
 touch ~/.gstack/sessions/"$PPID"
 _SESSIONS=$(find ~/.gstack/sessions -mmin -120 -type f 2>/dev/null | wc -l | tr -d ' ')
 find ~/.gstack/sessions -mmin +120 -type f -delete 2>/dev/null || true
-_CONTRIB=$(~/.claude/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
+_CONTRIB=""
+[ -n "$_GSTACK" ] && _CONTRIB=$("$_GSTACK/bin/gstack-config" get gstack_contributor 2>/dev/null || true)
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 echo "BRANCH: $_BRANCH"
 ```
 
-If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
+If output shows `UPGRADE_AVAILABLE <old> <new>`: read `gstack-upgrade/SKILL.md` from the active gstack install (for example `~/.claude/skills/gstack/gstack-upgrade/SKILL.md`, `~/.agents/skills/gstack/gstack-upgrade/SKILL.md`, `.claude/skills/gstack/gstack-upgrade/SKILL.md`, or `.agents/skills/gstack/gstack-upgrade/SKILL.md`) and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
 
 ## AskUserQuestion Format
 
@@ -190,7 +199,7 @@ Read each documentation file and cross-reference it against the diff. Use these 
 - Are workflow descriptions (dev setup, contributor mode, etc.) current?
 - Flag anything that would fail or confuse a first-time contributor.
 
-**CLAUDE.md / project instructions:**
+**Assistant instructions file (`CLAUDE.md` / `AGENTS.md`):**
 - Does the project structure section match the actual file tree?
 - Are listed commands and scripts accurate?
 - Do build/test instructions match what's in package.json (or equivalent)?
@@ -272,11 +281,11 @@ preserved them. This skill must NEVER do that.
 
 After auditing each file individually, do a cross-doc consistency pass:
 
-1. Does the README's feature/capability list match what CLAUDE.md (or project instructions) describes?
+1. Does the README's feature/capability list match what the assistant instructions file (`CLAUDE.md` or `AGENTS.md`) describes?
 2. Does ARCHITECTURE's component list match CONTRIBUTING's project structure description?
 3. Does CHANGELOG's latest version match the VERSION file?
-4. **Discoverability:** Is every documentation file reachable from README.md or CLAUDE.md? If
-   ARCHITECTURE.md exists but neither README nor CLAUDE.md links to it, flag it. Every doc
+4. **Discoverability:** Is every documentation file reachable from README.md or the assistant instructions file (`CLAUDE.md` or `AGENTS.md`)? If
+   ARCHITECTURE.md exists but neither README nor the assistant instructions file links to it, flag it. Every doc
    should be discoverable from one of the two entry-point files.
 5. Flag any contradictions between documents. Auto-fix clear factual inconsistencies (e.g., a
    version mismatch). Use AskUserQuestion for narrative contradictions.
@@ -432,6 +441,6 @@ Where status is one of:
 - **Never bump VERSION silently.** Always ask. Even if already bumped, check whether it covers the full scope of changes.
 - **Be explicit about what changed.** Every edit gets a one-line summary.
 - **Generic heuristics, not project-specific.** The audit checks work on any repo.
-- **Discoverability matters.** Every doc file should be reachable from README or CLAUDE.md.
+- **Discoverability matters.** Every doc file should be reachable from README or the assistant instructions file (`CLAUDE.md` or `AGENTS.md`).
 - **Voice: friendly, user-forward, not obscure.** Write like you're explaining to a smart person
   who hasn't seen the code.

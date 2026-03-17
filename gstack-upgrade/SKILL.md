@@ -232,7 +232,13 @@ When invoked directly as `/gstack-upgrade` (not from a preamble):
 
 1. Force a fresh update check (bypass cache):
 ```bash
-~/.claude/skills/gstack/bin/gstack-update-check --force
+_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
+_GSTACK=""
+[ -n "$_ROOT" ] && [ -d "$_ROOT/.claude/skills/gstack" ] && _GSTACK="$_ROOT/.claude/skills/gstack"
+[ -z "$_GSTACK" ] && [ -n "$_ROOT" ] && [ -d "$_ROOT/.agents/skills/gstack" ] && _GSTACK="$_ROOT/.agents/skills/gstack"
+[ -z "$_GSTACK" ] && [ -d "$HOME/.claude/skills/gstack" ] && _GSTACK="$HOME/.claude/skills/gstack"
+[ -z "$_GSTACK" ] && [ -d "$HOME/.agents/skills/gstack" ] && _GSTACK="$HOME/.agents/skills/gstack"
+[ -n "$_GSTACK" ] && "$_GSTACK/bin/gstack-update-check" --force
 ```
 Use the output to determine if an upgrade is available.
 
